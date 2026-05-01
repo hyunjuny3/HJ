@@ -1,0 +1,18 @@
+{
+  "name": "Racing Control Room",
+  "short_name": "Racing",
+  "description": "DTM, F1, WEC, IMSA, Porsche Cup racing calendar and points dashboard.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#090b10",
+  "theme_color": "#090b10",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

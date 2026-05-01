@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090b10" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Racing Calendar" />
+    <link rel="manifest" href="manifest.json" />
+    <title>2026 Racing Control Room | DTM F1 WEC IMSA Porsche Cup</title>
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-slides" aria-hidden="true">
+        <div class="slide slide-a"></div>
+        <div class="slide slide-b"></div>
+        <div class="slide slide-c"></div>
+        <div class="slide slide-d"></div>
+      </div>
+      <nav class="topbar" aria-label="주요 메뉴">
+        <a class="brand" href="#">Racing Control Room</a>
+        <div class="nav-pills">
+          <a href="#calendar">일정</a>
+          <a href="#standings">순위</a>
+          <a href="#news">뉴스</a>
+          <button id="settingsOpen" class="wheel-button" type="button" aria-label="설정 열기"><span></span></button>
+        </div>
+      </nav>
+      <div class="hero-content">
+        <p class="eyebrow">DTM · Formula 1 · FIA WEC · IMSA · Porsche Cup</p>
+        <h1>2026 레이싱 일정과 순위 대시보드</h1>
+        <p class="lede">
+          레이스 카드를 누르면 프랙티스, 퀄리파잉, 레이스 세션까지 펼쳐집니다.
+          다음 일정까지 남은 시간과 겹치는 주말도 같이 추적합니다.
+        </p>
+      </div>
+    </header>
+
+    <main>
+      <section class="overview" aria-label="시즌 요약">
+        <article>
+          <span class="metric" id="totalEvents">0</span>
+          <span class="label">전체 이벤트</span>
+        </article>
+        <article>
+          <span class="metric" id="upcomingEvents">0</span>
+          <span class="label">남은 이벤트</span>
+        </article>
+        <article>
+          <span class="metric" id="nextCountdown">-</span>
+          <span class="label" id="nextEventName">다음 일정</span>
+        </article>
+        <article>
+          <span class="metric">5</span>
+          <span class="label">시리즈</span>
+        </article>
+      </section>
+
+      <section class="controls" aria-label="일정 필터">
+        <div class="search-wrap">
+          <label for="searchInput">검색</label>
+          <input id="searchInput" type="search" placeholder="도시, 서킷, 이벤트명 검색" />
+        </div>
+        <div class="series-filter" role="group" aria-label="시리즈 선택">
+          <button class="filter-btn active tire tire-soft" data-series="all" type="button">전체</button>
+          <button class="filter-btn tire tire-soft" data-series="F1" type="button">F1</button>
+          <button class="filter-btn tire tire-medium" data-series="DTM" type="button">DTM</button>
+          <button class="filter-btn tire tire-hard" data-series="WEC" type="button">WEC</button>
+          <button class="filter-btn tire tire-medium" data-series="IMSA" type="button">IMSA</button>
+          <button class="filter-btn tire tire-hard" data-series="Porsche Cup" type="button">Porsche Cup</button>
+        </div>
+      </section>
+
+      <section class="race-now">
+        <div class="panel next-panel">
+          <p class="eyebrow">Next Up</p>
+          <h2>다가오는 레이스</h2>
+          <div id="nextList" class="compact-list"></div>
+        </div>
+        <div class="panel">
+          <p class="eyebrow">Weekend Watch</p>
+          <h2>겹치는 주말</h2>
+          <div id="clashList" class="compact-list"></div>
+        </div>
+      </section>
+
+      <section id="calendar" class="calendar-section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Chronological</p>
+            <h2>전체 일정</h2>
+          </div>
+          <p id="resultCount" class="result-count">0개 표시</p>
+        </div>
+        <div id="calendarList" class="calendar-list"></div>
+      </section>
+
+      <section id="standings" class="standings-section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Points Table</p>
+            <h2>시리즈별 순위</h2>
+          </div>
+          <p class="result-count">2026-05-01 기준</p>
+        </div>
+        <div id="standingsGrid" class="standings-grid"></div>
+        <div class="section-head detail-head">
+          <div>
+            <p class="eyebrow">Point Breakdown</p>
+            <h2>레이스별 포인트 획득</h2>
+          </div>
+          <div class="series-filter compact-tabs" role="group" aria-label="포인트 상세 시리즈 선택">
+            <button class="detail-tab active" data-detail-series="F1" type="button">F1</button>
+            <button class="detail-tab" data-detail-series="DTM" type="button">DTM</button>
+            <button class="detail-tab" data-detail-series="WEC" type="button">WEC</button>
+            <button class="detail-tab" data-detail-series="IMSA" type="button">IMSA</button>
+            <button class="detail-tab" data-detail-series="Porsche Cup" type="button">Porsche Cup</button>
+          </div>
+        </div>
+        <div id="pointsBreakdown" class="points-breakdown"></div>
+      </section>
+
+      <section id="news" class="race-now">
+        <div class="panel">
+          <p class="eyebrow">News Desk</p>
+          <h2>뉴스 시스템</h2>
+          <div id="newsList" class="news-list"></div>
+        </div>
+        <div class="panel">
+          <p class="eyebrow">Official Links</p>
+          <h2>시리즈별 공식 사이트</h2>
+          <div id="linksList" class="link-grid"></div>
+        </div>
+      </section>
+
+      <section id="sources" class="sources">
+        <p class="eyebrow">Sources & Sync</p>
+        <h2>데이터 출처와 다음 시즌 연동</h2>
+        <p>
+          일정 데이터는 `app.js`의 `seriesSources`와 `events` 구조로 분리했습니다.
+          다음 시즌에는 같은 구조에 연도별 공식 캘린더만 추가하면 화면 필터, 카운트다운, 순위, 뉴스 링크가 그대로 작동합니다.
+        </p>
+        <ul>
+          <li><a href="https://www.formula1.com/en/racing/2026" target="_blank" rel="noreferrer">Formula 1 공식 캘린더</a></li>
+          <li><a href="https://www.fia.com/events/world-endurance-championship/season-2026/fia-world-endurance-championship" target="_blank" rel="noreferrer">FIA WEC 공식 일정/순위</a></li>
+          <li><a href="https://www.imsa.com/weathertech/weathertech-2026-schedule/" target="_blank" rel="noreferrer">IMSA WeatherTech 공식 일정</a></li>
+          <li><a href="https://www.adac-motorsport.de/en/dtm/" target="_blank" rel="noreferrer">DTM / ADAC Motorsport 일정</a></li>
+          <li><a href="https://racing.porsche.com/en-US/series/carrera-cup-north-america" target="_blank" rel="noreferrer">Porsche Carrera Cup North America</a></li>
+        </ul>
+      </section>
+    </main>
+
+    <aside id="settingsPanel" class="settings-panel" aria-hidden="true">
+      <div class="settings-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow">Garage Setup</p>
+            <h2 id="settingsTitle">설정</h2>
+          </div>
+          <button id="settingsClose" class="icon-button" type="button" aria-label="설정 닫기">×</button>
+        </div>
+        <label class="switch-row">
+          <span>다크 모드</span>
+          <input id="darkToggle" type="checkbox" checked />
+        </label>
+        <label for="fontSelect">폰트</label>
+        <select id="fontSelect">
+          <option value="system">System Racing</option>
+          <option value="mono">Mono Timing</option>
+          <option value="serif">Classic Serif</option>
+          <option value="wide">Wide Display</option>
+        </select>
+        <label for="fontSize">글자 크기</label>
+        <input id="fontSize" type="range" min="14" max="20" value="16" />
+        <label for="accentSelect">타이어 테마</label>
+        <select id="accentSelect">
+          <option value="soft">Soft Red</option>
+          <option value="medium">Medium Yellow</option>
+          <option value="hard">Hard Silver</option>
+        </select>
+      </div>
+    </aside>
+
+    <script src="app.js"></script>
+    <script>
+      if ("serviceWorker" in navigator && location.protocol !== "file:") {
+        navigator.serviceWorker.register("./sw.js");
+      }
+    </script>
+  </body>
+</html>
