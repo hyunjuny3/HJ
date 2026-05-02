@@ -20,7 +20,7 @@
         <div class="slide slide-d"></div>
       </div>
       <nav class="topbar" aria-label="주요 메뉴">
-        <a class="brand" href="#">Made In Korea</a>
+        <a class="brand" href="#">Made in Korea</a>
         <div class="nav-pills">
           <a href="#calendar">일정</a>
           <a href="#standings">순위</a>
@@ -30,7 +30,7 @@
       </nav>
       <div class="hero-content">
         <p class="eyebrow">DTM · Formula 1 · FIA WEC · IMSA · Porsche Cup</p>
-        <h1>레이스 일정,드라이버 순위</h1>
+        <h1>레이싱 일정과 순위 대시보드</h1>
         <p class="lede">
           레이스 카드를 누르면 프랙티스, 퀄리파잉, 레이스 세션까지 펼쳐집니다.
           다음 일정까지 남은 시간과 겹치는 주말도 같이 추적합니다.
@@ -109,7 +109,7 @@
         <div id="pointsBreakdown" class="points-breakdown"></div>
       </section>
 	  
-      <section class="race-now">
+	  <section class="race-now">
         <div class="panel next-panel">
           <p class="eyebrow">Next Up</p>
           <h2>다가오는 레이스</h2>
@@ -119,6 +119,16 @@
           <p class="eyebrow">Weekend Watch</p>
           <h2>겹치는 주말</h2>
           <div id="clashList" class="compact-list"></div>
+        </div>
+        <div class="panel live-timing-panel">
+          <p class="eyebrow">F1 Live · OpenF1 API</p>
+          <div class="live-panel-header">
+            <h2>실시간 타이밍</h2>
+            <span id="liveIndicator" data-state="standby">● 대기중</span>
+          </div>
+          <div id="livePanel" class="live-panel-body">
+            <p class="compact-meta" style="padding:18px 0">불러오는 중…</p>
+          </div>
         </div>
       </section>
 
@@ -176,9 +186,9 @@
         <input id="fontSize" type="range" min="14" max="20" value="16" />
         <label for="accentSelect">타이어 테마</label>
         <select id="accentSelect">
-          <option value="soft">Soft Tyer</option>
-          <option value="medium">Medium Tyer</option>
-          <option value="hard">Hard Tyer</option>
+          <option value="soft">Soft Red</option>
+          <option value="medium">Medium Yellow</option>
+          <option value="hard">Hard Silver</option>
         </select>
       </div>
     </aside>

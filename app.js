@@ -1,4 +1,4 @@
-const TODAY = new Date("2026-05-01T00:00:00+09:00");
+const TODAY = new Date();
 
 const seriesColors = {
   F1: "#ff2d24",
@@ -117,7 +117,7 @@ const baseEvents = [
   ["F1", "라운드 22", "Abu Dhabi Grand Prix", "2026-12-04", "2026-12-06", "Yas Marina Circuit", "Abu Dhabi, UAE", ""],
 ];
 
-const events = baseEvents.map(([series, type, title, start, end, circuit, location, note]) => ({
+let events = baseEvents.map(([series, type, title, start, end, circuit, location, note]) => ({
   series, type, title, start, end, circuit, location, note, sessions: makeSessions(series, start, end, note),
 })).sort((a, b) => asDate(a.start) - asDate(b.start));
 
@@ -284,8 +284,9 @@ function dateRange(event) {
 }
 
 function eventStatus(event) {
-  if (asDate(event.end) < TODAY) return "past";
-  if (asDate(event.start) <= TODAY && TODAY <= asDate(event.end)) return "live";
+  const now = new Date();
+  if (asDate(event.end) < now) return "past";
+  if (asDate(event.start) <= now && now <= asDate(event.end)) return "live";
   return "future";
 }
 
@@ -302,7 +303,7 @@ function filteredEvents() {
 }
 
 function countdownTo(date) {
-  const diff = asDate(date) - TODAY;
+  const diff = asDate(date) - new Date();
   if (diff <= 0) return "진행 중";
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
@@ -310,7 +311,8 @@ function countdownTo(date) {
 }
 
 function renderOverview() {
-  const upcoming = events.filter((event) => asDate(event.end) >= TODAY);
+  const now = new Date();
+  const upcoming = events.filter((event) => asDate(event.end) >= now);
   const next = upcoming[0];
   document.querySelector("#totalEvents").textContent = events.length;
   document.querySelector("#upcomingEvents").textContent = upcoming.length;
@@ -361,7 +363,8 @@ function renderCalendar() {
 }
 
 function renderNext() {
-  const nextEvents = events.filter((event) => asDate(event.end) >= TODAY).slice(0, 7);
+  const now = new Date();
+  const nextEvents = events.filter((event) => asDate(event.end) >= now).slice(0, 7);
   document.querySelector("#nextList").innerHTML = nextEvents.map((event) => `
     <div class="compact-item" style="--series-color:${seriesColors[event.series]}">
       <strong>${event.series} · ${event.title}</strong>
@@ -378,7 +381,7 @@ function renderClashes() {
   const pairs = [];
   for (let i = 0; i < events.length; i += 1) {
     for (let j = i + 1; j < events.length; j += 1) {
-      if (events[i].series !== events[j].series && overlaps(events[i], events[j]) && asDate(events[j].end) >= TODAY) {
+      if (events[i].series !== events[j].series && overlaps(events[i], events[j]) && asDate(events[j].end) >= new Date()) {
         pairs.push([events[i], events[j]]);
       }
     }
@@ -523,3 +526,309 @@ renderPointBreakdown();
 renderNewsAndLinks();
 renderCalendar();
 bindControls();
+
+
+// ============================================================
+// LIVE DATA MODULE — 완전 자동화
+// ============================================================
+
+const OPENF1   = "https://api.openf1.org/v1";
+const JOLPICA  = "https://api.jolpi.ca/ergast/f1";
+const RSS2JSON = "https://api.rss2json.com/v1/api.json";
+let liveRefreshTimer = null;
+
+// ── 유틸 ────────────────────────────────────────────────────
+function fmtSession(session) {
+  if (!session?.date) return "TBA";
+  if (!session?.time) {
+    return new Date(session.date).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+  }
+  const dt = new Date(`${session.date}T${session.time}`);
+  return dt.toLocaleString("ko-KR", {
+    month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: "Asia/Seoul",
+  });
+}
+
+// ── F1 일정 API ─────────────────────────────────────────────
+async function fetchF1ScheduleFromAPI() {
+  const res = await fetch(`${JOLPICA}/2026.json?limit=30`);
+  const json = await res.json();
+  const races = json.MRData?.RaceTable?.Races || [];
+  if (!races.length) return null;
+
+  return races.map(race => {
+    const hasSprint = !!race.Sprint;
+    const sess = [];
+    if (race.FirstPractice?.date)  sess.push(["FP1", fmtSession(race.FirstPractice)]);
+    if (hasSprint) {
+      if (race.SecondPractice?.date) sess.push(["Sprint Qualifying", fmtSession(race.SecondPractice)]);
+      sess.push(["Sprint Race", fmtSession(race.Sprint)]);
+    } else {
+      if (race.SecondPractice?.date) sess.push(["FP2", fmtSession(race.SecondPractice)]);
+      if (race.ThirdPractice?.date)  sess.push(["FP3", fmtSession(race.ThirdPractice)]);
+    }
+    if (race.Qualifying?.date) sess.push(["Qualifying", fmtSession(race.Qualifying)]);
+    sess.push(["Race", fmtSession({ date: race.date, time: race.time })]);
+
+    return {
+      series: "F1",
+      type: `라운드 ${race.round}`,
+      title: race.raceName,
+      start: race.FirstPractice?.date || race.date,
+      end: race.date,
+      circuit: race.Circuit.circuitName,
+      location: `${race.Circuit.Location.locality}, ${race.Circuit.Location.country}`,
+      note: hasSprint ? "Sprint Weekend" : "",
+      sessions: sess,
+    };
+  });
+}
+
+// ── F1 드라이버 순위 ─────────────────────────────────────────
+async function fetchF1LiveStandings() {
+  const res = await fetch(`${JOLPICA}/current/driverStandings.json`);
+  const json = await res.json();
+  const list = json.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings;
+  if (!list?.length) return null;
+  return list.slice(0, 5).map(s => [
+    `${s.Driver.givenName} ${s.Driver.familyName}`,
+    s.Constructors?.[0]?.name || "–",
+    parseFloat(s.points),
+  ]);
+}
+
+// ── F1 포인트 브레이크다운 ───────────────────────────────────
+async function fetchF1ResultsBreakdown() {
+  const res = await fetch(`${JOLPICA}/2026/results.json?limit=300`);
+  const json = await res.json();
+  const races = json.MRData?.RaceTable?.Races || [];
+  if (!races.length) return null;
+
+  const rounds = [];
+  const driverData = {};
+
+  races.forEach(race => {
+    const label = race.raceName
+      .replace(" Grand Prix", "")
+      .replace("Grand Prix", "")
+      .trim();
+    rounds.push(label);
+    (race.Results || []).forEach(r => {
+      const name = `${r.Driver.givenName} ${r.Driver.familyName}`;
+      if (!driverData[name]) driverData[name] = { team: r.Constructor.name, pts: {} };
+      driverData[name].pts[label] = parseInt(r.points) || 0;
+    });
+  });
+
+  const rows = Object.entries(driverData)
+    .map(([driver, d]) => ({
+      driver,
+      team: d.team,
+      points: rounds.map(r => d.pts[r] || 0),
+    }))
+    .sort((a, b) =>
+      b.points.reduce((s, p) => s + p, 0) - a.points.reduce((s, p) => s + p, 0)
+    )
+    .slice(0, 8);
+
+  return { rounds, rows, note: "Jolpica API 실시간 레이스 결과 기준" };
+}
+
+// ── 뉴스 RSS (전 시리즈) ─────────────────────────────────────
+const newsFeeds = {
+  F1:           "https://www.motorsport.com/rss/f1/news/",
+  DTM:          "https://www.motorsport.com/rss/dtm/news/",
+  WEC:          "https://www.motorsport.com/rss/wec/news/",
+  IMSA:         "https://www.motorsport.com/rss/imsa/news/",
+  "Porsche Cup":"https://www.motorsport.com/rss/porsche-supercup/news/",
+};
+
+async function fetchAllNewsFromRSS() {
+  const results = [];
+  await Promise.allSettled(
+    Object.entries(newsFeeds).map(async ([series, rssUrl]) => {
+      const url = `${RSS2JSON}?rss_url=${encodeURIComponent(rssUrl)}&count=4`;
+      const res = await fetch(url);
+      const json = await res.json();
+      (json.items || []).forEach(item => {
+        results.push([series, item.title, item.pubDate?.slice(0, 10) || "", item.link]);
+      });
+    })
+  );
+  return results.sort((a, b) => b[2].localeCompare(a[2]));
+}
+
+// ── F1 라이브 세션 (OpenF1) ──────────────────────────────────
+async function fetchLatestF1Session() {
+  const res = await fetch(`${OPENF1}/sessions?session_key=latest`);
+  const json = await res.json();
+  return Array.isArray(json) ? json[0] : null;
+}
+async function fetchLivePositions(key) {
+  const res = await fetch(`${OPENF1}/position?session_key=${key}`);
+  return await res.json();
+}
+async function fetchSessionDrivers(key) {
+  const res = await fetch(`${OPENF1}/drivers?session_key=${key}`);
+  return await res.json();
+}
+
+function isSessionLive(session) {
+  if (!session?.date_start) return false;
+  const now = new Date();
+  const start = new Date(session.date_start);
+  const end = session.date_end
+    ? new Date(session.date_end)
+    : new Date(start.getTime() + 4 * 3600000);
+  return start <= now && now <= end;
+}
+
+function setLiveIndicator(message, state) {
+  const el = document.querySelector("#liveIndicator");
+  if (!el) return;
+  el.textContent = message;
+  el.dataset.state = state;
+}
+
+function renderLivePanel(session, positions, drivers) {
+  const panel = document.querySelector("#livePanel");
+  if (!panel) return;
+  if (!session) {
+    panel.innerHTML = `<p class="compact-meta" style="padding:18px 0">F1 세션 데이터 없음</p>`;
+    return;
+  }
+
+  const driverMap = {};
+  (drivers || []).forEach(d => { driverMap[d.driver_number] = d; });
+
+  let posHtml = "";
+  if (positions?.length) {
+    const latestPos = {};
+    positions.forEach(p => {
+      if (!latestPos[p.driver_number] || p.date > latestPos[p.driver_number].date)
+        latestPos[p.driver_number] = p;
+    });
+    const sorted = Object.values(latestPos)
+      .sort((a, b) => a.position - b.position)
+      .slice(0, 10);
+    posHtml = `<ol class="live-pos-list">${sorted.map(p => {
+      const d = driverMap[p.driver_number];
+      const color = d?.team_colour ? `#${d.team_colour}` : "var(--accent)";
+      return `<li>
+        <span class="live-pos-num">${p.position}</span>
+        <span class="live-pos-abbr" style="color:${color}">${d?.name_acronym || "#" + p.driver_number}</span>
+        <span class="live-pos-name">${d?.full_name || ""}</span>
+      </li>`;
+    }).join("")}</ol>`;
+  } else {
+    posHtml = `<p class="compact-meta" style="margin-top:14px">포지션 데이터 없음</p>`;
+  }
+
+  const sessionDate = new Date(session.date_start).toLocaleString("ko-KR", {
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+  panel.innerHTML = `
+    <div class="live-session-header">
+      <div>
+        <strong>${session.country_name || ""} GP</strong>
+        <span class="live-session-name">${session.session_name || ""}</span>
+      </div>
+      <div class="compact-meta">${sessionDate}<br>${session.circuit_short_name || ""}</div>
+    </div>
+    ${posHtml}
+    <p class="compact-meta live-updated">업데이트: ${new Date().toLocaleTimeString("ko-KR")}</p>`;
+}
+
+async function refreshLiveSession() {
+  try {
+    const session = await fetchLatestF1Session();
+    if (isSessionLive(session)) {
+      setLiveIndicator("🔴 LIVE", "live");
+      const [positions, drivers] = await Promise.all([
+        fetchLivePositions(session.session_key),
+        fetchSessionDrivers(session.session_key),
+      ]);
+      renderLivePanel(session, positions, drivers);
+      clearTimeout(liveRefreshTimer);
+      liveRefreshTimer = setTimeout(refreshLiveSession, 30000);
+    } else {
+      setLiveIndicator("● 대기중", "standby");
+      renderLivePanel(session, null, null);
+    }
+  } catch (e) {
+    setLiveIndicator("○ 오프라인", "offline");
+    const panel = document.querySelector("#livePanel");
+    if (panel) panel.innerHTML = `<p class="compact-meta" style="padding:14px 0">연결 실패</p>`;
+  }
+}
+
+// ── 전체 초기화 ──────────────────────────────────────────────
+async function initLiveData() {
+  await Promise.allSettled([
+
+    // 1) F1 일정 (스프린트 포함)
+    (async () => {
+      const f1 = await fetchF1ScheduleFromAPI();
+      if (f1?.length) {
+        const nonF1 = events.filter(e => e.series !== "F1");
+        events = [...nonF1, ...f1].sort((a, b) => asDate(a.start) - asDate(b.start));
+        renderOverview(); renderNext(); renderClashes(); renderCalendar();
+      }
+    })(),
+
+    // 2) F1 드라이버 순위
+    (async () => {
+      const s = await fetchF1LiveStandings();
+      if (s) { standings.F1 = s; renderStandings(); }
+    })(),
+
+    // 3) F1 포인트 브레이크다운
+    (async () => {
+      const b = await fetchF1ResultsBreakdown();
+      if (b) {
+        pointBreakdowns.F1 = b;
+        if (activeDetailSeries === "F1") renderPointBreakdown();
+      }
+    })(),
+
+    // 4) 뉴스 RSS (전 시리즈)
+    (async () => {
+      const news = await fetchAllNewsFromRSS();
+      if (news?.length) {
+        newsItems.length = 0;
+        news.forEach(item => newsItems.push(item));
+        renderNewsAndLinks();
+      }
+    })(),
+
+    // 5) F1 라이브 세션
+    refreshLiveSession(),
+  ]);
+
+  // 주기적 갱신
+  setInterval(async () => {
+    const s = await fetchF1LiveStandings().catch(() => null);
+    if (s) { standings.F1 = s; renderStandings(); }
+  }, 5 * 60 * 1000);
+
+  setInterval(async () => {
+    const news = await fetchAllNewsFromRSS().catch(() => null);
+    if (news?.length) {
+      newsItems.length = 0;
+      news.forEach(item => newsItems.push(item));
+      renderNewsAndLinks();
+    }
+  }, 15 * 60 * 1000);
+}
+
+initLiveData();
+
+// 1분마다 카운트다운·상태 자동 갱신
+setInterval(() => {
+  renderOverview();
+  renderNext();
+  renderClashes();
+  renderCalendar();
+}, 60000);

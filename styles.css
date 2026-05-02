@@ -10,7 +10,7 @@
   --dtm: #00c79a;
   --wec: #4d8cff;
   --imsa: #ffad32;
-  --porsche: #8414d1;
+  --porsche: #d7b56d;
   --shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
   --font-scale: 16px;
   --font-main: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -66,18 +66,18 @@ a { color: inherit; }
 }
 
 .slide-a {
-  background-image: linear-gradient(90deg, rgba(5, 7, 11, 0.88), rgba(5, 7, 11, 0.18), rgba(5, 7, 11, 0.72)), url("https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=2200&q=80");
+  background-image: linear-gradient(90deg, rgba(5, 7, 11, 0.88), rgba(5, 7, 11, 0.18), rgba(5, 7, 11, 0.72)), url("https://www.hockenheimring.de/wp-content/uploads/2023/04/230416-dtm-01-1920x1280.jpg");
 }
 .slide-b {
-  background-image: linear-gradient(90deg, rgba(5, 7, 11, 0.88), rgba(5, 7, 11, 0.18), rgba(5, 7, 11, 0.72)), url("https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=2200&q=80");
+  background-image: linear-gradient(90deg, rgba(5, 7, 11, 0.88), rgba(5, 7, 11, 0.18), rgba(5, 7, 11, 0.72)), url("https://media.formula1.com/image/upload/t_16by9South/c_lfill,w_3392/q_auto/v1740000001/fom-website/campaign/projects/beginner's%20guides/GettyImages-2234147338.webp");
   animation-delay: 6s;
 }
 .slide-c {
-  background-image: linear-gradient(90deg, rgba(5, 7, 11, 0.88), rgba(5, 7, 11, 0.18), rgba(5, 7, 11, 0.72)), url("https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=2200&q=80");
+  background-image: linear-gradient(90deg, rgba(5, 7, 11, 0.88), rgba(5, 7, 11, 0.18), rgba(5, 7, 11, 0.72)), url("https://newsroom.porsche.com/.imaging/mte/porsche-templating-theme/image_1290x726/dam/US-local/Press-Releases/2024/8-AUGUST/IMSA-Michelin-GT-Challenge-at-VIR/IMSA-WeatherTech-SportsCar-Championship-GTD-Pro-class-points-leading-No.-77-AO-Racing-Porsche-911-GT3-R.jpg/jcr:content/IMSA%20WeatherTech%20SportsCar%20Championship%20GTD%20Pro%20class%20points%20leading%20No%2077%20AO%20Racing%20Porsche%20911%20GT3%20R.jpg");
   animation-delay: 12s;
 }
 .slide-d {
-  background-image: linear-gradient(90deg, rgba(5, 7, 11, 0.88), rgba(5, 7, 11, 0.18), rgba(5, 7, 11, 0.72)), url("https://images.unsplash.com/photo-1533106418989-88406c7cc8ca?auto=format&fit=crop&w=2200&q=80");
+  background-image: linear-gradient(90deg, rgba(5, 7, 11, 0.88), rgba(5, 7, 11, 0.18), rgba(5, 7, 11, 0.72)), url("https://www.blackbookmotorsport.com/wp-content/uploads/2024/08/wec-world-endurance-championship-manufacturer-docuseries.jpg");
   animation-delay: 18s;
 }
 
@@ -622,5 +622,127 @@ select {
     min-height: 54px;
     justify-content: space-between;
     padding: 0 14px;
+  }
+}
+
+/* ============================================================
+   LIVE DATA STYLES
+   ============================================================ */
+
+.race-now {
+  grid-template-columns: 1fr 1fr 1fr !important;
+}
+
+.live-timing-panel {
+  min-width: 0;
+}
+
+.live-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+#liveIndicator {
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+#liveIndicator[data-state="live"] {
+  color: #00e87a;
+  border-color: #00e87a;
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+#liveIndicator[data-state="standby"] {
+  color: var(--muted);
+}
+
+#liveIndicator[data-state="offline"] {
+  color: #ff5b56;
+  border-color: #ff5b56;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.live-session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+
+.live-session-name {
+  display: block;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 800;
+  margin-top: 3px;
+}
+
+.live-pos-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.live-pos-list li {
+  display: grid;
+  grid-template-columns: 24px 40px 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+
+.live-pos-num {
+  font-weight: 950;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.live-pos-abbr {
+  font-weight: 950;
+  font-size: 0.88rem;
+}
+
+.live-pos-name {
+  color: var(--muted);
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.live-updated {
+  margin-top: 10px;
+  font-size: 0.72rem;
+  text-align: right;
+}
+
+@media (max-width: 920px) {
+  .race-now {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .race-now {
+    grid-template-columns: 1fr !important;
   }
 }
