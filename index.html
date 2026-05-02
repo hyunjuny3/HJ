@@ -1,203 +1,98 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#090b10" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Racing Calendar" />
-    <link rel="manifest" href="manifest.json" />
-    <title>2026 Racing Control Room | DTM F1 WEC IMSA Porsche Cup</title>
-    <link rel="preconnect" href="https://images.unsplash.com" />
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <header class="hero">
-      <div class="hero-slides" aria-hidden="true">
-        <div class="slide slide-a"></div>
-        <div class="slide slide-b"></div>
-        <div class="slide slide-c"></div>
-        <div class="slide slide-d"></div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#e10600" />
+  <meta name="description" content="F1 일정, 챔피언십, 트랙·라이브 세션" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>F1 일정 · Live</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="bg-ambient" aria-hidden="true"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-checkered" aria-hidden="true"></div>
+  <div class="bg-vignette" aria-hidden="true"></div>
+  <header class="header">
+    <div class="header-inner">
+      <h1 class="logo">
+        <span class="logo-f1">F1</span>
+        <span class="logo-text">시즌 일정</span>
+      </h1>
+      <div class="header-actions">
+        <label class="season-label" for="season">시즌</label>
+        <select id="season" class="season-select" aria-label="시즌 선택"></select>
+        <button type="button" id="refresh" class="btn-refresh" title="지금 새로고침">↻</button>
       </div>
-      <nav class="topbar" aria-label="주요 메뉴">
-        <a class="brand" href="#">Made in Korea</a>
-        <div class="nav-pills">
-          <a href="#calendar">일정</a>
-          <a href="#standings">순위</a>
-          <a href="#news">뉴스</a>
-          <button id="settingsOpen" class="wheel-button" type="button" aria-label="설정 열기"><span></span></button>
-        </div>
-      </nav>
-      <div class="hero-content">
-        <p class="eyebrow">DTM · Formula 1 · FIA WEC · IMSA · Porsche Cup</p>
-        <h1>레이싱 일정과 순위 대시보드</h1>
-        <p class="lede">
-          레이스 카드를 누르면 프랙티스, 퀄리파잉, 레이스 세션까지 펼쳐집니다.
-          다음 일정까지 남은 시간과 겹치는 주말도 같이 추적합니다.
-        </p>
-      </div>
-    </header>
+    </div>
+    <div id="live-strip" class="live-strip" hidden>
+      <span class="live-dot" aria-hidden="true"></span>
+      <span id="live-text" class="live-text"></span>
+    </div>
+  </header>
 
-    <main>
-      <section class="overview" aria-label="시즌 요약">
-        <article>
-          <span class="metric" id="totalEvents">0</span>
-          <span class="label">전체 이벤트</span>
-        </article>
-        <article>
-          <span class="metric" id="upcomingEvents">0</span>
-          <span class="label">남은 이벤트</span>
-        </article>
-        <article>
-          <span class="metric" id="nextCountdown">-</span>
-          <span class="label" id="nextEventName">다음 일정</span>
-        </article>
-        <article>
-          <span class="metric">5</span>
-          <span class="label">시리즈</span>
-        </article>
-      </section>
+  <main class="main">
+    <p id="status" class="status" role="status">일정을 불러오는 중…</p>
+    <section id="next-race" class="next-race card" hidden></section>
+    <section id="standings" class="standings card" aria-labelledby="standings-title" hidden>
+      <h2 id="standings-title" class="standings-title">
+        드라이버 챔피언십
+        <span id="standings-live-badge" class="standings-badge" hidden>Live</span>
+      </h2>
+      <p id="standings-status" class="standings-status">포인트 기록을 불러오는 중…</p>
+      <ul id="standings-list" class="standings-list"></ul>
+    </section>
 
-      <section class="controls" aria-label="일정 필터">
-        <div class="search-wrap">
-          <label for="searchInput">검색</label>
-          <input id="searchInput" type="search" placeholder="도시, 서킷, 이벤트명 검색" />
-        </div>
-        <div class="series-filter" role="group" aria-label="시리즈 선택">
-          <button class="filter-btn active tire tire-soft" data-series="all" type="button">전체</button>
-          <button class="filter-btn tire tire-soft" data-series="F1" type="button">F1</button>
-          <button class="filter-btn tire tire-medium" data-series="DTM" type="button">DTM</button>
-          <button class="filter-btn tire tire-hard" data-series="WEC" type="button">WEC</button>
-          <button class="filter-btn tire tire-medium" data-series="IMSA" type="button">IMSA</button>
-          <button class="filter-btn tire tire-hard" data-series="Porsche Cup" type="button">Porsche Cup</button>
-        </div>
-      </section>
+    <ul id="race-list" class="race-list"></ul>
 
-      <section id="calendar" class="calendar-section">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Chronological</p>
-            <h2>전체 일정</h2>
-          </div>
-          <p id="resultCount" class="result-count">0개 표시</p>
-        </div>
-        <div id="calendarList" class="calendar-list"></div>
-      </section>
-
-      <section id="standings" class="standings-section">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Points Table</p>
-            <h2>시리즈별 순위</h2>
-          </div>
-          <p class="result-count">2026-05-01 기준</p>
-        </div>
-        <div id="standingsGrid" class="standings-grid"></div>
-        <div class="section-head detail-head">
-          <div>
-            <p class="eyebrow">Point Breakdown</p>
-            <h2>레이스별 포인트 획득</h2>
-          </div>
-          <div class="series-filter compact-tabs" role="group" aria-label="포인트 상세 시리즈 선택">
-            <button class="detail-tab active" data-detail-series="F1" type="button">F1</button>
-            <button class="detail-tab" data-detail-series="DTM" type="button">DTM</button>
-            <button class="detail-tab" data-detail-series="WEC" type="button">WEC</button>
-            <button class="detail-tab" data-detail-series="IMSA" type="button">IMSA</button>
-            <button class="detail-tab" data-detail-series="Porsche Cup" type="button">Porsche Cup</button>
-          </div>
-        </div>
-        <div id="pointsBreakdown" class="points-breakdown"></div>
-      </section>
-	  
-	  <section class="race-now">
-        <div class="panel next-panel">
-          <p class="eyebrow">Next Up</p>
-          <h2>다가오는 레이스</h2>
-          <div id="nextList" class="compact-list"></div>
-        </div>
-        <div class="panel">
-          <p class="eyebrow">Weekend Watch</p>
-          <h2>겹치는 주말</h2>
-          <div id="clashList" class="compact-list"></div>
-        </div>
-        <div class="panel live-timing-panel">
-          <p class="eyebrow">F1 Live · OpenF1 API</p>
-          <div class="live-panel-header">
-            <h2>실시간 타이밍</h2>
-            <span id="liveIndicator" data-state="standby">● 대기중</span>
-          </div>
-          <div id="livePanel" class="live-panel-body">
-            <p class="compact-meta" style="padding:18px 0">불러오는 중…</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="news" class="race-now">
-        <div class="panel">
-          <p class="eyebrow">News Desk</p>
-          <h2>뉴스 시스템</h2>
-          <div id="newsList" class="news-list"></div>
-        </div>
-        <div class="panel">
-          <p class="eyebrow">Official Links</p>
-          <h2>시리즈별 공식 사이트</h2>
-          <div id="linksList" class="link-grid"></div>
-        </div>
-      </section>
-
-      <section id="sources" class="sources">
-        <p class="eyebrow">Sources & Sync</p>
-        <h2>데이터 출처와 다음 시즌 연동</h2>
-        <p>
-          일정 데이터는 `app.js`의 `seriesSources`와 `events` 구조로 분리했습니다.
-          다음 시즌에는 같은 구조에 연도별 공식 캘린더만 추가하면 화면 필터, 카운트다운, 순위, 뉴스 링크가 그대로 작동합니다.
-        </p>
-        <ul>
-          <li><a href="https://www.formula1.com/en/racing/2026" target="_blank" rel="noreferrer">Formula 1 공식 캘린더</a></li>
-          <li><a href="https://www.fia.com/events/world-endurance-championship/season-2026/fia-world-endurance-championship" target="_blank" rel="noreferrer">FIA WEC 공식 일정/순위</a></li>
-          <li><a href="https://www.imsa.com/weathertech/weathertech-2026-schedule/" target="_blank" rel="noreferrer">IMSA WeatherTech 공식 일정</a></li>
-          <li><a href="https://www.adac-motorsport.de/en/dtm/" target="_blank" rel="noreferrer">DTM / ADAC Motorsport 일정</a></li>
-          <li><a href="https://racing.porsche.com/en-US/series/carrera-cup-north-america" target="_blank" rel="noreferrer">Porsche Carrera Cup North America</a></li>
+    <section class="card regulations-card" aria-labelledby="reg-title">
+      <h2 id="reg-title" class="reg-title">F1 규정 · 규칙</h2>
+      <p class="reg-lead">
+        아래는 요약이며, 실제 판정·기술 승인은 매 시즌 갱신되는 <strong>FIA 공식 문서</strong>가 우선입니다.
+      </p>
+      <details class="reg-block" open>
+        <summary>스포팅(경기) 개요</summary>
+        <ul class="reg-ul">
+          <li>주말 구성: 연습, 예선(또는 스프린트 주말 시 스프린트 예선/스프린트), 결승 등은 매년 캘린더·스포팅 레귤레이션에 따릅니다.</li>
+          <li>포인트: 결승 상위 10명에 대부분의 시즌에서 포인트가 부여됩니다. 스프린트·가장 빠른 랩 포인트는 해당 시즌 규정을 따릅니다.</li>
+          <li>페널티: 트랙 리밋, 안전차 절차 위반, 그리드·스톱·고(Go) 절차 등은 스튜워드가 스포팅 레귤레이션에 따라 처리합니다.</li>
         </ul>
-      </section>
-    </main>
+      </details>
+      <details class="reg-block">
+        <summary>기술 규정 개요</summary>
+        <ul class="reg-ul">
+          <li>차량은 FIA <strong>포뮬러 1 테크니컬 레귤레이션</strong>에 맞게 설계·검사됩니다(에어로, 파워유닛, 샤시, 안전 구조 등).</li>
+          <li><strong>테크니컬 디렉티브(TD)</strong>: FIA가 해석·세부 기준을 통지하는 문서로, 실제 “업그레이드가 뭘 바꿨는지”는 팀 비공개가 많고 여기처럼 일반 공개 API에 실시간으로 풀리지 않습니다.</li>
+          <li><strong>비용 규제·패러크 페르메</strong> 등 운영 규칙도 시즌별로 문서화됩니다.</li>
+        </ul>
+      </details>
+      <details class="reg-block">
+        <summary>공식 원문 바로가기</summary>
+        <ul class="reg-ul">
+          <li><a href="https://www.fia.com/regulation/category/championship/fia-formula-one-world-championship/" target="_blank" rel="noopener">FIA — Formula 1 챔피언십 규정 페이지</a> (PDF·문서 업데이트)</li>
+          <li><a href="https://www.formula1.com/en/information/fia-f1-rules-regulations.2.html" target="_blank" rel="noopener">Formula1.com — 규칙·규정 안내</a></li>
+        </ul>
+      </details>
+    </section>
+  </main>
 
-    <aside id="settingsPanel" class="settings-panel" aria-hidden="true">
-      <div class="settings-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-        <div class="settings-head">
-          <div>
-            <p class="eyebrow">Garage Setup</p>
-            <h2 id="settingsTitle">설정</h2>
-          </div>
-          <button id="settingsClose" class="icon-button" type="button" aria-label="설정 닫기">×</button>
-        </div>
-        <label class="switch-row">
-          <span>다크 모드</span>
-          <input id="darkToggle" type="checkbox" checked />
-        </label>
-        <label for="fontSelect">폰트</label>
-        <select id="fontSelect">
-          <option value="system">System Racing</option>
-          <option value="mono">Mono Timing</option>
-          <option value="serif">Classic Serif</option>
-          <option value="wide">Wide Display</option>
-        </select>
-        <label for="fontSize">글자 크기</label>
-        <input id="fontSize" type="range" min="14" max="20" value="16" />
-        <label for="accentSelect">타이어 테마</label>
-        <select id="accentSelect">
-          <option value="soft">Soft Red</option>
-          <option value="medium">Medium Yellow</option>
-          <option value="hard">Hard Silver</option>
-        </select>
-      </div>
-    </aside>
+  <footer class="footer">
+    <p>
+      일정·세션·포인트·결과는 <a href="https://api.jolpi.ca/ergast/f1/" target="_blank" rel="noopener">Jolpi Ergast</a>,
+      라이브 세션·취소·이미지 등은 <a href="https://openf1.org" target="_blank" rel="noopener">OpenF1</a>.
+      크롬·엣지: 주소 표시줄 설치 메뉴로 <strong>앱처럼 설치(PWA)</strong> 할 수 있습니다(로컬 <code>http://127.0.0.1</code> 포함).
+    </p>
+  </footer>
 
-    <script src="app.js"></script>
-    <script>
-      if ("serviceWorker" in navigator && location.protocol !== "file:") {
-        navigator.serviceWorker.register("./sw.js");
-      }
-    </script>
-  </body>
+  <script type="module" src="js/app.js"></script>
+</body>
 </html>

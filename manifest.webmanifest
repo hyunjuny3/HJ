@@ -1,0 +1,19 @@
+{
+  "name": "F1 일정 · 챔피언십",
+  "short_name": "F1 Hub",
+  "description": "F1 일정, 스탠딩, 트랙·라이브 세션 정보",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#050608",
+  "theme_color": "#e10600",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
